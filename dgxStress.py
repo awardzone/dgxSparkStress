@@ -36,6 +36,10 @@ import sys
 from multiprocessing import Process
 import torch.multiprocessing as mp  # Usiamo il multiprocessing specifico di PyTorch
 
+#MATRIX_SIZE = 16384  # Dimensione della matrice (16k x 16k). Aumenta se la VRAM è enorme (es. H100/A100)
+#BATCH_SIZE = 4       # Numero di matrici allocate contemporaneamente per saturare la VRAM
+#ITERATIONS = 100000  # Numero di iterazioni per processo
+
 # Configurazione ottimizzata per GPU con 128 GB di VRAM
 MATRIX_SIZE = 32768  # Matrici gigantesche da 32k x 32k
 BATCH_SIZE = 24      # Numero di matrici allocate in parallelo per saturare la VRAM
