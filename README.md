@@ -111,6 +111,10 @@ Mentre lo script è in esecuzione, apri un secondo terminale e lancia questo com
 
     watch -n 1 nvidia-smi
 
+oppure:
+
+    watch -n 1 "nvidia-smi --query-gpu=index,name,utilization.gpu,utilization.memory,memory.used,temperature.gpu,power.draw,power.limit --format=csv"
+
 Cosa controllare durante lo stress test:
 
 Pwr:Usage/Cap: Dovrebbe passare da 65-70W attuali a circa  550W-600W. Se non raggiunge almeno i 500W, i Tensor Cores non sono saturati 
