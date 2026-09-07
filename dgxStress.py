@@ -72,6 +72,13 @@ def stress_gpu(gpu_id):
                 _ = torch.matmul(matrices_A[j], matrices_B[j])
             
             if i % 1000 == 0 and i > 0:
+                #Il problema: PyTorch esegue le operazioni CUDA in modo asincrono. Significa che la CPU ordina alla GPU di fare le moltiplicazioni 
+                #e passa immediatamente alla riga successiva di codice, senza aspettare che la GPU abbia finito.
+                #Di conseguenza, il Tempo parziale stampato a schermo sarà falso (molto più basso di quello reale), perché la CPU sta semplicemente 
+                #misurando quanto tempo ci mette a "mettere in coda" i comandi, non quanto tempo ci mette la GPU a eseguirli.
+                # QUESTA RIGA serve per aspettare che la GPU finisca il lavoro ed avere ed avere il 'Tempo' più veritiero.
+                torch.cuda.synchronize(device)
+                
                 elapsed = time.time() - start_time
                 print(f"[GPU {gpu_id}] Iterazione {i}/{ITERATIONS} completata. Tempo parziale: {elapsed:.2f}s")
                 sys.stdout.flush()
