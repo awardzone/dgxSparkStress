@@ -1,3 +1,5 @@
+Script Python per testare le macchine Nvidia DGX Spark
+
 dgxStress.py:
 -------------
 1) Tensor Cores: L'uso di torch.float16 (Half Precision) è fatto appositamente 
@@ -56,3 +58,64 @@ standard, l'architettura a blocchi di Llama costringe la GPU a muovere
 continuamente i pesi del modello dai chip di memoria HBM3 ai core di calcolo 
 e viceversa, generando uno stress combinato su ampiezza di banda della memoria 
 (Memory Bandwidth) e potenza di calcolo puro (TFLOPS).
+
+************************************************************************************
+
+NOTA:
+
+Lo script va bene anche per testare le H200 con architettura Hopper, va considerato però che queste sono un 'tantino' :p 
+più performanti quindi si possono introdurre piccole modifiche per usarle a pieno, infatti H200 NVL hanno un Power Cap di 600W
+ciascuna e circa 141 GB  di VRAM utilizzabile.
+
+-------------
+1) Ottimizzazione della VRAM per le H200
+
+Lo script originale calcola circa 103,2 GB di allocazione fissa, pensata per schede da 128 GB. Le H200 hanno poco più di 140 GB.
+Se lanciando lo script noti tramite nvidia-smi che l'utilizzo della memoria si ferma intorno all'80-85%, puoi spingerlo oltre 
+aumentando leggermente il BATCH_SIZE:
+
+    BATCH_SIZE = 28 (oppure 30)
+    
+Se ricevi un errore di CUDA Out of Memory (OOM) dovuto ai tensori temporanei creati durante il torch.matmul, scendi gradualmente (es. 26).
+
+-------------
+2) Passaggio a BFloat16 (Ottimale per architettura Hopper)
+
+Le H200 sono basate sull'architettura NVIDIA Hopper. Anche se torch.float16 va benissimo per attivare i Tensor Cores, per testare al meglio 
+l'architettura Hopper e' meglio utilizzare il formato BFloat16.
+Puoi modificare questa riga nel tuo script:
+
+    tensor_type = torch.bfloat16
+
+Il consumo di memoria resterà identico (2 byte per elemento), ma sarà sfruttato l'utilizzo dell'hardware più moderno della GPU.
+
+-------------
+3) Abilitare TF32 (Opzionale)
+
+Se vuoi testare i Tensor Cores simulando carichi di lavoro in singola precisione (FP32), l'architettura Hopper supporta il formato TF32 (TensorFloat-32).
+Per farlo, dovresti impostare:
+
+    tensor_type = torch.float32 
+
+e aggiungere questa riga all'inizio dello script:
+
+    torch.backends.cuda.matmul.allow_tf32 = True
+
+Nota: questo raddoppierà l'uso della VRAM, quindi in quel caso dovrai dimezzare il BATCH_SIZE.
+
+************************************************************************************
+
+Come monitorare il test:
+-------------
+Mentre lo script è in esecuzione, apri un secondo terminale e lancia questo comando per monitorare il comportamento in tempo reale (si aggiorna ogni secondo):
+
+    watch -n 1 nvidia-smi
+
+Cosa controllare durante lo stress test:
+
+Pwr:Usage/Cap: Dovrebbe passare da 65-70W attuali a circa  550W-600W. Se non raggiunge almeno i 500W, i Tensor Cores non sono saturati 
+(ma con matrici da 32k x 32k dovresti raggiungerli facilmente).
+
+Temp: Le temperature delle GPU durante il test saliranno rapidamente. Assicurarsi che si mantengano sotto gli 85C.  >) >) >)
+
+GPU-Util: Dovrebbe arrivare costantentemente intorno al 100%.
