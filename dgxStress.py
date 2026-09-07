@@ -45,6 +45,13 @@ MATRIX_SIZE = 32768  # Matrici gigantesche da 32k x 32k
 BATCH_SIZE = 24      # Numero di matrici allocate in parallelo per saturare la VRAM
 ITERATIONS = 200000  # Ciclo lungo per mantenere lo stress stabile
 tensor_type = torch.float16 
+#tensor_type = torch.bfloat16
+
+# Opzionale: de-commenta se decidi di usare torch.float32 (TF32) e ricordati di dimezzare BATCH_SIZE a 14!
+#torch.backends.cuda.matmul.allow_tf32 = True
+#BATCH_SIZE = 14
+#tensor_type = torch.float32 
+
 
 def stress_gpu(gpu_id):
     """Funzione eseguita su una singola GPU per metterla sotto stress."""
