@@ -1,7 +1,7 @@
-Script Python per testare le macchine Nvidia DGX Spark
+# Script Python per testare le macchine Nvidia DGX Spark e H200
 
-dgxStress.py:
--------------
+## dgxStress.py:
+
 1) Tensor Cores: L'uso di torch.float16 (Half Precision) è fatto appositamente 
 per attivare i Tensor Cores, che sono i componenti della GPU che consumano più 
 energia e generano più calore in assoluto sulle DGX.
@@ -29,9 +29,9 @@ in totale per GPU.
 tensori temporanei generati dalle operazioni di moltiplicazione (torch.matmul) 
 e dai contesti CUDA.
 
-************************************************************************************
-dgxStressLLM.py
----------------
+
+## dgxStressLLM.py
+
 Per caricare un modello che saturi una GPU da 128 GB di VRAM senza dover scaricare 
 centinaia di gigabyte di file da internet (che richiederebbero ore), usiamo un 
 trucco avanzato di PyTorch e Hugging Face: inizializziamo una configurazione di 
@@ -59,9 +59,62 @@ continuamente i pesi del modello dai chip di memoria HBM3 ai core di calcolo
 e viceversa, generando uno stress combinato su ampiezza di banda della memoria 
 (Memory Bandwidth) e potenza di calcolo puro (TFLOPS).
 
-************************************************************************************
 
-NOTA:
+## dgxStressLLM-H200.py
+
+Script dgxStressLLM ottimizzato per uso con Nvidia H200
+Variazioni rispetto al precedente:
+
+1) Formato dati: Passaggio a BFloat16
+
+2) Le dimensioni del Modello (I Layer)
+Il Llama-3-70B originale ha 80 layer e, caricato interamente a 16-bit, pesa circa 138 GB.
+Lo script per la DGX da 128GB è "tagliato" a 72 layer (config.num_hidden_layers = 72) per farlo scendere a circa 110 GB e lasciare spazio in VRAM per i calcoli.
+Avendo a disposizione 140 GB sulle H200, possiamo alzare questo valore. Non ti consiglio di mettere 80 (andresti in Out of Memory al primo giro di calcolo), ma possiamo alzarlo a 76 Questo riempirà circa 125-130 GB di base, lasciandoci circa 10-15 GB per stressare i tensori temporanei (il KV Cache dei Transformer).
+
+3) Aumentare lo stress sul "Contesto"
+I 10-15 GB di VRAM liberi rimanenti vanno riempiti con i dati in entrata. Possiamo aumentare il BATCH_SIZE da 4 a 8, e se la memoria regge, spingere la SEQUENCE_LENGTH a 8192 (o lasciarla a 4096). Più sono alti questi valori, più i controller di memoria della H200 pregheranno pietà.
+
+Modifiche apportate al codice per le H200:
+
+Nelle costanti in alto:
+
+    MODEL_ID = "meta-llama/Meta-Llama-3-70B" 
+    BATCH_SIZE = 8
+    SEQUENCE_LENGTH = 4096
+    ITERATIONS = 50000       
+    tensor_type = torch.bfloat16 # Aggiunta per comodità
+
+Nella funzione stress_gpu_with_llm:
+
+    # Ottimizzazione per H200 (141GB) target ~125GB occupati all'avvio
+    config.num_hidden_layers = 76
+
+Modifica la riga di allocazione per usare il BFloat16 e, per essere certi di sfruttare i Tensor Core Hopper al massimo,
+forziamo l'implementazione dell'Attention più performante di PyTorch:
+
+    with torch.device(device):
+        # Inizializza in bfloat16 e abilita SDPA (Scaled Dot Product Attention / Flash Attention)
+            model = AutoModelForCausalLM.from_config(
+                config, 
+                torch_dtype=tensor_type,
+                attn_implementation="sdpa" # Forza PyTorch a usare le ottimizzazioni Hopper
+            )
+
+Se al primo giro del ciclo for i in range(ITERATIONS): lo script si interrompe per un OOM (CUDA Out Of Memory), significa che i 76 layer + 
+il batch size 8 sono troppi per i 141 GB reali. In quel caso:
+  
+    Riporta il BATCH_SIZE a 4.
+
+Se fallisce ancora, riporta i layer a 74:
+
+    config.num_hidden_layers = 74
+
+Una volta trovata la quadratura esatta, questo script genererà un carico termico ed elettrico 'Importante' >) >) >) 
+perfetto per certificare la stabilità di un server NVIDIA H200 (Se non brucia prima muahahahaha)
+
+
+## NOTA dgxStress.py:
 
 Lo script va bene anche per testare le H200 con architettura Hopper, va considerato però che queste sono un 'tantino' :p 
 più performanti quindi si possono introdurre piccole modifiche per usarle a pieno, infatti H200 NVL hanno un Power Cap di 600W
