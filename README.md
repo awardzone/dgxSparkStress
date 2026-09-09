@@ -113,7 +113,7 @@ Se fallisce ancora, riporta i layer a 74:
 Una volta trovata la quadratura esatta, questo script genererà un carico termico ed elettrico 'Importante' >) >) >) 
 perfetto per certificare la stabilità di un server NVIDIA H200 (Se non brucia prima muahahahaha)
 
-### Nota: 
+### Nota: modelli utillizzati
 Il modello usato nello script è "gated" (ad accesso ristretto) su Hugging Face. Per potervi accedere, è necessario 
 accettare esplicitamente la licenza di Meta e autenticarsi all'interno del proprio ambiente di sviluppo.  
 1) Richiedi l'accesso al modello: Vai sulla pagina ufficiale del modello su Hugging Face 
@@ -125,6 +125,22 @@ poi nella sezione "Access Tokens". Crea un nuovo token con permessi di sola lett
 Incolla il token appena generato quando ti viene richiesto. 
 In alternativa, puoi passare il token come variabile d'ambiente eseguendo export HF_TOKEN="il_tuo_token_qui" 
 prima di lanciare lo script Python.
+
+Se NON si vuol usare un modello "gated" lo si può sostituire per esempio con il modello Qwen/Qwen2.5-72B.
+Si tratta di un modello di Alibaba Cloud da circa 72 miliardi di parametri che è completamente pubblico e 
+privo di restrizioni (non-gated) su Hugging Face. Non richiede alcun account, accettazione di licenze o token di autenticazione.
+
+Avendo un numero di parametri quasi identico a Llama-3-70B, la sua architettura sfrutterà in modo analogo le dinamiche di memoria
+e i Tensor Core, raggiungendo l'obiettivo di saturare e stressare i 140GB della tua H200.
+
+Basterà modificare la singola riga di configurazione nello script:
+
+    # Rimuovi o commenta questa riga:
+    # MODEL_ID = "meta-llama/Meta-Llama-3-70B" 
+    
+    # Inserisci il modello non-gated:
+    MODEL_ID = "Qwen/Qwen2.5-72B"
+
 
 ## NOTA dgxStress.py:
 
