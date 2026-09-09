@@ -113,6 +113,18 @@ Se fallisce ancora, riporta i layer a 74:
 Una volta trovata la quadratura esatta, questo script genererà un carico termico ed elettrico 'Importante' >) >) >) 
 perfetto per certificare la stabilità di un server NVIDIA H200 (Se non brucia prima muahahahaha)
 
+### Nota: 
+Il modello usato nello script è "gated" (ad accesso ristretto) su Hugging Face. Per potervi accedere, è necessario 
+accettare esplicitamente la licenza di Meta e autenticarsi all'interno del proprio ambiente di sviluppo.  
+1) Richiedi l'accesso al modello: Vai sulla pagina ufficiale del modello su Hugging Face 
+(https://huggingface.co/meta-llama/Meta-Llama-3-70B). Accedi con il tuo account (o creane uno) e compila il modulo 
+per accettare le condizioni d'uso di Meta. L'approvazione è automatica o richiede pochissimi minuti.
+2) Genera un Access Token:Browser.Sempre su Hugging Face, vai nelle impostazioni del tuo profilo ("Settings"), 
+poi nella sezione "Access Tokens". Crea un nuovo token con permessi di sola lettura ("Read").
+3) Autentica il terminale: Torna nel tuo ambiente llm-env e autenticati eseguendo il comando huggingface-cli login. 
+Incolla il token appena generato quando ti viene richiesto. 
+In alternativa, puoi passare il token come variabile d'ambiente eseguendo export HF_TOKEN="il_tuo_token_qui" 
+prima di lanciare lo script Python.
 
 ## NOTA dgxStress.py:
 
