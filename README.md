@@ -204,3 +204,7 @@ Pwr:Usage/Cap: Dovrebbe passare da 65-70W attuali a circa  550W-600W. Se non rag
 Temp: Le temperature delle GPU durante il test saliranno rapidamente. Assicurarsi che si mantengano sotto gli 85C.  >) >) >)
 
 GPU-Util: Dovrebbe arrivare costantentemente intorno al 100%.
+
+************************************************************************************
+
+If u use this software or part of it, please consider to refer original author. And if u want to be very very very grateful and want to send a tip..... u re welcome  :x 
